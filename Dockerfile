@@ -1,0 +1,77 @@
+FROM scratch AS root
+COPY --from=stagex/core-musl:local . /
+COPY --from=stagex/core-busybox:local . /
+COPY --from=stagex/user-e2fsprogs:local . /
+COPY --from=stagex/user-util-linux:local . /
+
+COPY --from=stagex/core-musl:local . /root
+COPY --from=stagex/core-busybox:local . /root
+COPY --from=stagex/user-dhcpcd:local . /root
+COPY --from=stagex/core-zlib:local . /root
+COPY --from=stagex/core-openssl:local . /root
+COPY --from=stagex/user-openssh:local . /root
+COPY --from=stagex/user-util-linux:local . /root
+COPY --from=stagex/user-e2fsprogs:local . /root
+
+COPY --from=stagex/core-make:local . /root
+COPY --from=stagex/core-ca-certificates:local . /root
+COPY --from=stagex/core-curl:local . /root
+COPY --from=stagex/core-git:local . /root
+COPY --from=stagex/core-python:local . /root
+COPY --from=stagex/user-iptables:local . /root
+COPY --from=stagex/user-containerd:local . /root
+COPY --from=stagex/user-libseccomp:local . /root
+COPY --from=stagex/user-runc:local . /root
+COPY --from=stagex/user-docker:local . /root
+COPY --from=stagex/user-docker-cli-buildx:local . /root
+
+RUN mkdir -p /root/dev /root/proc /root/sys /root/run
+RUN cat <<EOF >/root/etc/inittab
+::sysinit:/etc/init.d/rcS
+::respawn:-/bin/sh
+::shutdown:/sbin/swapoff -a
+::shutdown:/bin/umount -a -r
+::restart:/sbin/init
+EOF
+RUN mkdir -p /root/etc/docker
+RUN cat <<EOF >/root/etc/docker/daemon.json
+{
+  "features": {
+    "containerd-snapshotter": true
+  }
+}
+EOF
+ADD rcS /root/etc/init.d/rcS
+RUN cp /root/etc/ssl/certs/ca-certificates.crt /root/etc/ssl/cert.pem
+ADD out/keys /root/root/.ssh/authorized_keys
+RUN mkfs.ext2 -d /root /root.img 1500m
+
+
+FROM scratch AS boot
+COPY --from=stagex/core-musl:local . /
+COPY --from=stagex/core-busybox:local . /
+COPY --from=stagex/user-util-linux:local . /
+COPY --from=stagex/user-syslinux:local . /
+COPY --from=stagex/user-dosfstools:local . /
+COPY --from=stagex/user-mtools:local . /
+
+COPY --from=stagex/user-linux-server:local /bzImage /boot/vmlinuz
+RUN cat <<EOF >/boot/syslinux.cfg
+DEFAULT linux
+LABEL linux
+  KERNEL vmlinuz
+  APPEND root=/dev/sdb
+EOF
+RUN dd if=/dev/zero of=/fat.img bs=1M count=30
+RUN mkdosfs /fat.img
+RUN mcopy -i fat.img /boot/* ::
+
+RUN (dd if=/dev/zero bs=1M count=1; cat /fat.img) > /boot.img
+RUN printf 'label: dos\nstart=1M size=30M bootable type=b' | sfdisk /boot.img
+RUN syslinux -i -t 1048576 /boot.img
+RUN dd if=/usr/share/syslinux/mbr.bin bs=440 count=1 conv=notrunc of=/boot.img
+
+
+FROM scratch
+COPY --from=boot /boot.img /
+COPY --from=root /root.img /

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+mount -t devtmpfs devtmpfs /dev
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mkdir /dev/pts
+mount -t devpts devpts /dev/pts
+
+mount -o remount,rw /
+mount -t cgroup cgroup /sys/fs/cgroup
+
+if ! blkid | grep -q sdc; then
+  mkfs.ext4 /dev/sdc
+fi
+mkdir -p /build
+mount /dev/sdc /build
+
+dhcpcd eth0
+
+ssh-keygen -A
+/usr/sbin/sshd
+
+start-stop-daemon -Sqb --exec dockerd -- --data-root /build/docker
