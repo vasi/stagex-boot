@@ -1,4 +1,4 @@
-# stagex-demo
+# stagex-boot
 
 A quick-n-dirty demo that [stagex](https://codeberg.org/stagex/stagex) can be self-hosting.
 
