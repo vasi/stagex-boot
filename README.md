@@ -11,6 +11,16 @@ cd /build/stagex
 make IMPORT=1 core-busybox ...
 ```
 
+You can "install" software by extracting container contents:
+```
+make -C ../stagex IMPORT=1 user-mtools
+mkdir /mnt
+ctr -a /var/run/docker/containerd/containerd.sock -n moby \
+  image mount docker.io/stagex/user-mtools:local /mnt
+cp -a /mnt/* /
+umount /mnt
+```
+
 # License
 
 (C) 2025 Dave Vasilevsky
