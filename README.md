@@ -22,6 +22,8 @@ cp -a /mnt/* /
 umount /mnt
 ```
 
+Last tested with [stagex commit 9212430f](https://codeberg.org/stagex/stagex/commit/9212430fe969dea75e67b916794299c12402efe3).
+
 # License
 
 (C) 2025 Dave Vasilevsky
