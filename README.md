@@ -2,16 +2,11 @@
 
 A quick-n-dirty demo that [stagex](https://codeberg.org/stagex/stagex) can be self-hosting.
 
-Clone this repo next to your stagex clone. Then run `make run` to build a VM from stagex and run it, then `make ssh` to SSH into it.
+Just clone this repo, then run `make run` to build a VM from stagex and run it, then `make ssh` to SSH into it.
 
-Finally, you can rebuild stagex in the VM:
-```
-git clone https://codeberg.org/stagex/stagex.git /build/stagex
-cd /build/stagex
-make IMPORT=1 core-busybox ...
-```
 
-You can "install" software by extracting container contents:
+You can "install" stagex packages by extracting container contents:
+
 ```
 cd /build/stagex
 make IMPORT=1 user-mtools
@@ -22,7 +17,23 @@ cp -a /mnt/* /
 umount /mnt
 ```
 
+It's even self-hosting! You can rebuild stagex in the VM:
+
+```
+git clone https://codeberg.org/stagex/stagex.git /build/stagex
+cd /build/stagex
+make IMPORT=1 core-busybox ...
+```
+
 Last tested with [stagex commit 9212430f](https://codeberg.org/stagex/stagex/commit/9212430fe969dea75e67b916794299c12402efe3).
+
+# Bootstrapping
+
+You can also use this to bootstrap an entire bootable "distro" from scratch, using stagex.
+
+First, you'll need to [setup Docker to use containerd](https://docs.docker.com/engine/storage/containerd/#enable-containerd-image-store-on-docker-engine). You should also prune any stagex images you already have locally.
+
+Then clone this repo next to a clone of stagex, and run `make bootstrap` to build and run from scratch!
 
 # License
 

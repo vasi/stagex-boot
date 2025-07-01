@@ -71,7 +71,8 @@ RUN printf 'label: dos\nstart=1M size=30M bootable type=b' | sfdisk /boot.img
 RUN syslinux -i -t 1048576 /boot.img
 RUN dd if=/usr/share/syslinux/mbr.bin bs=440 count=1 conv=notrunc of=/boot.img
 
-
-FROM scratch
+FROM scratch AS boot.img
 COPY --from=boot /boot.img /
+
+FROM scratch AS root.img
 COPY --from=root /root.img /
